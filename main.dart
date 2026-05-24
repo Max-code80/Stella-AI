@@ -1,4 +1,3 @@
-
 // ================================
 // STELLA AI ULTIMATE UI
 // DARTPAD SAFE VERSION
@@ -837,10 +836,13 @@ class _StellaHomeState extends State<StellaHome>
     required IconData icon,
     required Color color,
   }) {
-    return glassContainer(
+    return Container(
       width: 55,
       height: 55,
-      borderRadius: 100,
+      decoration: BoxDecoration(
+        color: color.withAlpha(40),
+        borderRadius: BorderRadius.circular(100),
+      ),
       child: Icon(
         icon,
         color: color,
