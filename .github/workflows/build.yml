@@ -11,11 +11,10 @@ jobs:
         with:
           flutter-version: '3.22.0'
       - run: flutter pub get
-      - run: flutter create .
+      - run: flutter create . --project-name stella_ai
       - run: flutter build apk --release
       - uses: actions/upload-artifact@v4
         with:
           name: release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
-
           
