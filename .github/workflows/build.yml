@@ -10,6 +10,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.22.0'
+      - run: flutter clean
       - run: flutter pub get
       - run: flutter create . --project-name stella_ai
       - run: flutter build apk --release
@@ -17,4 +18,5 @@ jobs:
         with:
           name: release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
+
           
