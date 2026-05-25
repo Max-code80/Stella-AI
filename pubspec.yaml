@@ -4,6 +4,9 @@ version: 1.0.0+1
 environment:
   sdk: '>=3.0.0 <4.0.0'
 dependencies:
+  url_launcher: ^6.2.5
+  google_generative_ai: ^0.4.3
+  
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.6
