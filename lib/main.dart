@@ -392,54 +392,59 @@ class _StellaHomeState extends State<StellaHome> with TickerProviderStateMixin {
     _forceTerminalViewScrollToLowestBoundary();
   }
 
-  void _processInternalShellCommandDirective(String commandRawString, {required String contextSource}) {
-    final List<String> multiTokenSplitArray = commandRawString.split(" ");
-    final String rootInstructionToken = multiTokenSplitArray[0].toLowerCase();
+    void executeUserChatInputSubmissionPipeline() async {
+    final String cleanSanitizedUserInput = chatInputPipelineController.text.trim();
+    if (cleanSanitizedUserInput.isEmpty) return;
 
-    String coreFeedbackPayloadString = "";
+    chatInputPipelineController.clear();
+    setState(() {
+      liveChatConversationsRegistry.add(
+        ChatMessage(text: cleanSanitizedUserInput, isAI: false, timestamp: DateTime.now()),
+      );
+      isAISystemCurrentlySimulatingThinkingState = true;
+      stellaCurrentOperationalMood = "PROCESSING";
+    });
+    _forceChatViewScrollToLowestBoundary();
 
-    switch (rootInstructionToken) {
-      case "/clear":
-        if (contextSource == "TERMINAL") {
-          setState(() {
-            terminalOutputLiveStreamsRegistry.clear();
-            terminalOutputLiveStreamsRegistry.add("ST_OS: Shell viewport registers completely flushed and allocated.");
-          });
-        } else {
-          setState(() {
-            liveChatConversationsRegistry.clear();
-            liveChatConversationsRegistry.add(ChatMessage(text: "Chat historical runtime view completely cleared.", isAI: true, timestamp: DateTime.now()));
-          });
-          coreFeedbackPayloadString = "Chat buffer flushed.";
-        }
-        break;
-      case "/matrix":
-        setState(() {
-          cyberpunkMode = true;
-          stellaCurrentOperationalMood = "CYBER_WARRIOR";
-        });
-        coreFeedbackPayloadString = "Warning: Injecting high-intensity cyber-grid styling values into running presentation buffers.";
-        break;
-      default:
-        coreFeedbackPayloadString = "Instruction target identifier mismatch. Token '$rootInstructionToken' failed to parse.";
+    // Agar terminal command hui (/clear etc)
+    if (cleanSanitizedUserInput.startsWith("/")) {
+      _processInternalShellCommandDirective(cleanSanitizedUserInput, contextSource: "CHAT");
+      return;
     }
 
-    if (coreFeedbackPayloadString.isNotEmpty) {
-      Future.delayed(const Duration(milliseconds: 300), () {
-        if (!mounted) return;
-        setState(() {
-          if (contextSource == "TERMINAL") {
-            terminalOutputLiveStreamsRegistry.add("ST_OS_RESPONSE: $coreFeedbackPayloadString");
-            _forceTerminalViewScrollToLowestBoundary();
-          } else {
-            isAISystemCurrentlySimulatingThinkingState = false;
-            liveChatConversationsRegistry.add(
-              ChatMessage(text: coreFeedbackPayloadString, isAI: true, timestamp: DateTime.now()),
-            );
-            _forceChatViewScrollToLowestBoundary();
-          }
-        });
+    // ==========================================
+    // REAL GEMINI AI API CALL TRIGGER
+    // ==========================================
+    try {
+      final response = await aiChatSession.sendMessage(Content.text(cleanSanitizedUserInput));
+      final String aiResponseText = response.text ?? "Error: Neural link returning empty data.";
+
+      if (!mounted) return;
+      setState(() {
+        isAISystemCurrentlySimulatingThinkingState = false;
+        stellaCurrentOperationalMood = "OPTIMIZED";
+        liveChatConversationsRegistry.add(
+          ChatMessage(text: aiResponseText, isAI: true, timestamp: DateTime.now()),
+        );
+        coreMemoryRegistry.add(
+          MemoryLog(logType: "AI_RESPONSE", metadata: "Generated response via Gemini API.", recordedAt: DateTime.now()),
+        );
       });
+      _forceChatViewScrollToLowestBoundary();
+      
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        isAISystemCurrentlySimulatingThinkingState = false;
+        stellaCurrentOperationalMood = "ERROR";
+        liveChatConversationsRegistry.add(
+          ChatMessage(
+              text: "System Error: Gemini Neural Core se connection fail ho gaya. Kripya apna API Key aur Internet connection check karein.\n\nError Details: $error",
+              isAI: true,
+              timestamp: DateTime.now()),
+        );
+      });
+      _forceChatViewScrollToLowestBoundary();
     }
   }
 
